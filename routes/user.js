@@ -6,4 +6,7 @@ router.post("/sendOTP", user.phoneLogin);
 router.post("/verifyOTP", user.verifyOTP);
 router.put("/profile", verifyToken, user.updateProfile);
 router.put("/phone", verifyToken, user.changePhone);
+router.get("/profile", verifyToken, user.getMyProfile);
+router.post("/sendMail", verifyToken, user.sendMailOTP);
+router.post("/verifyMailOTP", verifyToken, user.verifyMailOTP);
 module.exports = router;

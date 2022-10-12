@@ -26,3 +26,14 @@ exports.profileSchema = Joi.object()
     pincode: Joi.number().min(100000).max(999999).required(),
   })
   .required();
+exports.emailSchema = Joi.object()
+  .keys({
+    email: Joi.string().email().required(),
+  })
+  .required();
+exports.verifyEmailSchema = Joi.object()
+  .keys({
+    id: Joi.string().hex().length(24).required(),
+    otp: Joi.number().min(100000).max(999999).required(),
+  })
+  .required();

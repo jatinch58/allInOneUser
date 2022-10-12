@@ -2,6 +2,8 @@ const validator = require("../validators/validators");
 const User = require("../models/user");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const Mail = require("../models/mail");
 //================================================= phone login ==============================================//
 exports.phoneLogin = (req, res) => {
   try {
@@ -137,6 +139,92 @@ exports.changePhone = (req, res) => {
       .catch((error) => {
         return res.status(500).json(error);
       });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+//============================================= get my profile =======================================================//
+exports.getMyProfile = async (req, res) => {
+  try {
+    const myProfile = await User.findById(req.user._id);
+    if (myProfile) {
+      return res.status(200).json({ result: myProfile });
+    }
+    return res.status(500).json({ message: "Something went wrong" });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+//========================================= send otp to mail =======================================================//
+exports.sendMailOTP = async (req, res) => {
+  try {
+    const { error } = validator.emailSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const createOTP = new Mail({
+      OTP: Number(otp),
+      email: req.body.email,
+    });
+    createOTP
+      .save()
+      .then(async (val) => {
+        let transporter = nodemailer.createTransport({
+          service: process.env.SERVICE,
+          host: process.env.HOST,
+          port: process.env.PORTMAIL,
+          secure: false,
+          auth: {
+            user: process.env.USER,
+            pass: process.env.PASSWORD,
+          },
+        });
+        let info = await transporter.sendMail({
+          from: process.env.USER,
+          to: req.body.email,
+          subject: "OTP",
+          html: `Hi your OTP is ${otp}`,
+        });
+
+        if (info.accepted.length !== 0) {
+          return res
+            .status(200)
+            .json({ message: "OTP sent successfully", id: val._id });
+        }
+        return res.status(500).json({ message: "Something went wrong" });
+      })
+      .catch((e) => {
+        res.status(500).send({ message: e.name });
+      });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+//======================================= verify email otp =================================================//
+exports.verifyMailOTP = async (req, res) => {
+  try {
+    const { error } = validator.verifyEmailSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const verifyOTP = await Mail.findById(req.body.id);
+    if (!verifyOTP) {
+      return res.status(403).json({ message: "OTP expired" });
+    }
+    if (verifyOTP.OTP !== req.body.otp) {
+      return res.status(400).json({ message: "Wrong OTP" });
+    }
+    if (verifyOTP.OTP === req.body.otp) {
+      const updateEmail = await User.findByIdAndUpdate(req.user._id, {
+        email: verifyOTP.email,
+      });
+      if (updateEmail) {
+        return res.status(200).json({ message: "Email successfully updated" });
+      }
+      return res.status(500).json({ message: "Something went wrong" });
+    }
+    return res.status(500).json({ message: "Something went wrong" });
   } catch (e) {
     return res.status(500).json({ message: "Something went wrong" });
   }
