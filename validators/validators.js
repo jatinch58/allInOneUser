@@ -37,3 +37,14 @@ exports.verifyEmailSchema = Joi.object()
     otp: Joi.number().min(100000).max(999999).required(),
   })
   .required();
+exports.uploadPictureSchema = Joi.object()
+  .keys({
+    image: Joi.string().required(),
+  })
+  .required();
+exports.updatePictureSchema = Joi.object()
+  .keys({
+    image: Joi.string().required(),
+    imageUrl: Joi.string().required(),
+  })
+  .required();

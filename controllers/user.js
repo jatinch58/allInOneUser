@@ -4,6 +4,13 @@ const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const Mail = require("../models/mail");
+const AWS = require("aws-sdk");
+const { v4: uuidv4 } = require("uuid");
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ID,
+  secretAccessKey: process.env.AWS_SECRET,
+  Bucket: process.env.BUCKET_NAME,
+});
 //================================================= phone login ==============================================//
 exports.phoneLogin = (req, res) => {
   try {
@@ -227,5 +234,106 @@ exports.verifyMailOTP = async (req, res) => {
     return res.status(500).json({ message: "Something went wrong" });
   } catch (e) {
     return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+//==================================== upload profile picture =============================================//
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    const { error } = validator.uploadPictureSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    let myFile = req.file.originalname.split(".");
+    const fileType = myFile[myFile.length - 1];
+    const params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `${uuidv4()}.${fileType}`,
+      Body: req.file.buffer,
+    };
+    s3.upload(params, async (error, data) => {
+      if (error) {
+        return res.status(500).send(error);
+      }
+      const result = await parentdb.findByIdAndUpdate(req.user._id, {
+        imageUrl: data.Location,
+      });
+      if (result) {
+        return res
+          .status(200)
+          .json({ message: "uploaded Profile Picture successfully" });
+      }
+      return res.status(500).json({ message: "Something bad happened" });
+    });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+//===================================== update profile picture =========================================//
+exports.updateProfilePicture = async (req, res) => {
+  try {
+    const { error } = validator.updatePictureSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    let myFile = req.file.originalname.split(".");
+    const fileType = myFile[myFile.length - 1];
+    const params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `${uuidv4()}.${fileType}`,
+      Body: req.file.buffer,
+    };
+    s3.upload(params, async (error, dataResult) => {
+      if (error) {
+        return res.status(500).send(error);
+      }
+      let p = req.body.imageUrl;
+      if (p) {
+        p = p.split("/");
+        p = p[p.length - 1];
+        const params1 = {
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: p,
+        };
+        const s3delete = function (params) {
+          return new Promise((resolve, reject) => {
+            s3.createBucket(
+              {
+                Bucket: params.Bucket,
+              },
+              function () {
+                s3.deleteObject(params, async function (err, data) {
+                  if (err) return res.status(500).send({ message: err });
+                  const result = await parentdb.findByIdAndUpdate(
+                    req.user._id,
+                    {
+                      imageUrl: dataResult.Location,
+                    }
+                  );
+                  if (result) {
+                    return res
+                      .status(200)
+                      .send({ message: "Image updated successfully" });
+                  }
+                  return res
+                    .status(500)
+                    .send({ message: "Something bad happened" });
+                });
+              }
+            );
+          });
+        };
+        s3delete(params1);
+      } else {
+        const result = await parentdb.findByIdAndUpdate(req.user._id, {
+          imageUrl: data.Location,
+        });
+        if (result) {
+          return res.status(200).send("updated sucessfully");
+        }
+        return res.status(500).send({ message: "Something went wrong" });
+      }
+    });
+  } catch (e) {
+    return res.status(500).send({ message: e.name });
   }
 };
