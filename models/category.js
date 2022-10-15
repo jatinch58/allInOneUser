@@ -1,5 +1,5 @@
 const { Schema, model } = require("mongoose");
-const service = require("./service");
+const { Service } = require("./service");
 const subCategory = require("./subCategory");
 const CategorySchema = new Schema(
   {
@@ -18,7 +18,7 @@ const CategorySchema = new Schema(
     service: [
       {
         type: Schema.Types.ObjectId,
-        ref: service,
+        ref: Service,
       },
     ],
   },

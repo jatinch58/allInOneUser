@@ -1,4 +1,6 @@
 const { Schema, model } = require("mongoose");
+const { PackageSchema } = require("./packageSchema");
+
 const ServiceSchema = new Schema(
   {
     name: {
@@ -10,12 +12,13 @@ const ServiceSchema = new Schema(
     description: {
       type: String,
     },
-    rating: {
-      type: Number,
-    },
+    silver: PackageSchema,
+    gold: PackageSchema,
+    platinum: PackageSchema,
   },
   {
     timestamps: true,
   }
 );
-module.exports = model("service", ServiceSchema);
+
+exports.Service = model("service", ServiceSchema);

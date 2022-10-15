@@ -1,57 +1,19 @@
 const Category = require("../models/category");
+const SubCategory = require("../models/subCategory");
+const SubCategory2 = require("../models/subCategory2");
 exports.getAllCategory = async (req, res) => {
   try {
     let category = await Category.find(
       {},
-      { _id: 1, name: 1, subCategory: 1, createdAt: 1, updatedAt: 1 }
-    )
-      .populate({
-        path: "subCategory",
-        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
-        populate: {
-          path: "subCategory2",
-          select: { _id: 1, name: 1, service: 1, createdAt: 1, updatedAt: 1 },
-          populate: {
-            path: "service",
-            model: "service",
-            select: {
-              _id: 1,
-              name: 1,
-              description: 1,
-              rating: 1,
-              image: 1,
-              createdAt: 1,
-              updatedAt: 1,
-            },
-          },
-        },
-      })
-      .populate({
-        path: "subCategory",
-        model: "subCategory",
-        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
-        populate: {
-          path: "service",
-          model: "service",
-          select: {
-            _id: 1,
-            name: 1,
-            description: 1,
-            rating: 1,
-            image: 1,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        },
-      })
-      .populate("service", {
-        name: 1,
-        description: 1,
-        rating: 1,
-        image: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      });
+      { _id: 1, name: 1, subCategory: 1, service: 1 }
+    ).populate({
+      path: "subCategory",
+      select: { _id: 1, name: 1, service: 1 },
+      populate: {
+        path: "subCategory2",
+        select: { _id: 1, name: 1, service: 1 },
+      },
+    });
 
     if (!category) {
       return res
@@ -59,11 +21,73 @@ exports.getAllCategory = async (req, res) => {
         .send({ success: false, message: "Something went wrong" });
     }
     return res.status(200).send({
-      success: true,
       message: "All Category SubCategory SubCategory2 fetched successfully",
       category,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
+  }
+};
+exports.getCategoryServices = async (req, res) => {
+  try {
+    const result = await Category.findById(req.params.id, {
+      service: 1,
+      _id: 0,
+    }).populate("service", { __v: 0, createdAt: 0, updatedAt: 0 });
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "Category not found of id " + req.params.id });
+    }
+    if (result.service.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No service found in the given id " + req.params.id });
+    }
+    return res.status(200).json({ result: result.service });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+exports.getSubCategoryServices = async (req, res) => {
+  try {
+    const result = await SubCategory.findById(req.params.id, {
+      service: 1,
+      _id: 0,
+    }).populate("service", { __v: 0, createdAt: 0, updatedAt: 0 });
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "Sub-Category not found of id " + req.params.id });
+    }
+    if (result.service.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No service found in the given id " + req.params.id });
+    }
+    return res.status(200).json({ result: result.service });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+exports.getSubCategory2Services = async (req, res) => {
+  try {
+    const result = await SubCategory2.findById(req.params.id, {
+      service: 1,
+      _id: 0,
+    }).populate("service", { __v: 0, createdAt: 0, updatedAt: 0 });
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "Sub-Category2 not found of id " + req.params.id });
+    }
+    if (result.service.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No service found in the given id " + req.params.id });
+    }
+    return res.status(200).json({ result: result.service });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
   }
 };
