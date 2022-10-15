@@ -1,6 +1,7 @@
 const Category = require("../models/category");
 const SubCategory = require("../models/subCategory");
 const SubCategory2 = require("../models/subCategory2");
+//=============================================== get all detailed categories ===============================================//
 exports.getAllCategory = async (req, res) => {
   try {
     let category = await Category.find(
@@ -28,6 +29,7 @@ exports.getAllCategory = async (req, res) => {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
+//============================================ get service by categories ==============================================//
 exports.getCategoryServices = async (req, res) => {
   try {
     const result = await Category.findById(req.params.id, {
@@ -49,6 +51,7 @@ exports.getCategoryServices = async (req, res) => {
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
+//========================================== get service by sub categories =================================================//
 exports.getSubCategoryServices = async (req, res) => {
   try {
     const result = await SubCategory.findById(req.params.id, {
@@ -70,6 +73,7 @@ exports.getSubCategoryServices = async (req, res) => {
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
+//=================================================== get service by sub category 2 ======================================//
 exports.getSubCategory2Services = async (req, res) => {
   try {
     const result = await SubCategory2.findById(req.params.id, {
