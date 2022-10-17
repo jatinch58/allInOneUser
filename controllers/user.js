@@ -49,7 +49,7 @@ exports.verifyOTP = (req, res) => {
           const isAlreadyRegistered = await User.findOne({
             phone: req.body.phone,
           });
-          if (isAlreadyRegistered.firstName) {
+          if (isAlreadyRegistered && isAlreadyRegistered.firstName) {
             const _id = isAlreadyRegistered._id.toString();
             const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
               expiresIn: "24h",
@@ -61,7 +61,7 @@ exports.verifyOTP = (req, res) => {
           }
           if (isAlreadyRegistered) {
             const _id = isAlreadyRegistered._id.toString();
-            const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
+            const token = await jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
               expiresIn: "24h",
             });
             return res.status(200).json({
@@ -72,27 +72,22 @@ exports.verifyOTP = (req, res) => {
           const createUser = new User({
             phone: req.body.phone,
           });
-          createUser
-            .save()
-            .then(async (result) => {
-              const _id = result._id.toString();
-              const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
-                expiresIn: "24h",
-              });
-              return res.status(201).json({
-                message: "Registered successful",
-                token: token,
-              });
-            })
-            .catch(() => {
-              return res
-                .status(500)
-                .json({ message: "Something bad happened" });
+          const createdUser = await createUser.save();
+          if (createdUser) {
+            const _id = createdUser._id.toString();
+            const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
+              expiresIn: "24h",
             });
+            return res.status(201).json({
+              message: "Registered successful",
+              token: token,
+            });
+          }
+          return res.status(500).json({ message: "Something bad happened" });
         } else if (response.data.Details === "OTP Expired") {
           return res.status(403).json({ message: "OTP Expired" });
         }
-        return res.status(500).json({ message: "Something went wrong" });
+        return res.status(500).json({ message: "Something went wrong 1" });
       })
       .catch((error) => {
         return res.status(500).json(error);

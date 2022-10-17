@@ -19,14 +19,14 @@ exports.getAllCategory = async (req, res) => {
     if (!category) {
       return res
         .status(500)
-        .send({ success: false, message: "Something went wrong" });
+        .json({ success: false, message: "Something went wrong" });
     }
-    return res.status(200).send({
+    return res.status(200).json({
       message: "All Category SubCategory SubCategory2 fetched successfully",
       category,
     });
   } catch (e) {
-    return res.status(500).send({ success: false, error: e.name });
+    return res.status(500).json({ success: false, error: e.name });
   }
 };
 //============================================ get service by categories ==============================================//
