@@ -48,3 +48,8 @@ exports.updatePictureSchema = Joi.object()
     imageUrl: Joi.string().required(),
   })
   .required();
+
+exports.refreshTokenSchema = Joi.object().keys({
+  refreshToken: Joi.string().required(),
+  user_id: Joi.string().required(),
+});

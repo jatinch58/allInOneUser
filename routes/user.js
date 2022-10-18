@@ -12,4 +12,5 @@ router.post("/sendMail", verifyToken, user.sendMailOTP);
 router.post("/verifyMailOTP", verifyToken, user.verifyMailOTP);
 router.post("/profilePicture", verifyToken, upload, user.uploadProfilePicture);
 router.put("/profilePicture", verifyToken, upload, user.updateProfilePicture);
+router.post("/refreshToken", user.refreshToken);
 module.exports = router;

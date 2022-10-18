@@ -1,5 +1,6 @@
 const validator = require("../validators/validators");
 const User = require("../models/user");
+const RefreshToken = require("../models/refreshToken");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -51,22 +52,52 @@ exports.verifyOTP = (req, res) => {
           });
           if (isAlreadyRegistered && isAlreadyRegistered.firstName) {
             const _id = isAlreadyRegistered._id.toString();
+            const refreshToken = uuidv4();
+            const makeRefreshToken = await RefreshToken.findOneAndUpdate(
+              {
+                user_id: _id,
+              },
+              {
+                refreshToken: refreshToken,
+              },
+              { upsert: true, new: true }
+            );
+            if (!makeRefreshToken) {
+              return res.status(500).json({ message: "Something went wrong" });
+            }
             const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
               expiresIn: "24h",
             });
             return res.status(200).json({
               message: "Welcome back",
               token: token,
+              refreshToken: refreshToken,
+              user_id: _id,
             });
           }
           if (isAlreadyRegistered) {
             const _id = isAlreadyRegistered._id.toString();
-            const token = await jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
+            const refreshToken = uuidv4();
+            const makeRefreshToken = await RefreshToken.findOneAndUpdate(
+              {
+                user_id: _id,
+              },
+              {
+                refreshToken: refreshToken,
+              },
+              { upsert: true, new: true }
+            );
+            if (!makeRefreshToken) {
+              return res.status(500).json({ message: "Something went wrong" });
+            }
+            const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
               expiresIn: "24h",
             });
             return res.status(200).json({
               message: "Registered successful",
               token: token,
+              refreshToken: refreshToken,
+              user_id: _id,
             });
           }
           const createUser = new User({
@@ -75,12 +106,27 @@ exports.verifyOTP = (req, res) => {
           const createdUser = await createUser.save();
           if (createdUser) {
             const _id = createdUser._id.toString();
+            const refreshToken = uuidv4();
+            const makeRefreshToken = await RefreshToken.findOneAndUpdate(
+              {
+                user_id: _id,
+              },
+              {
+                refreshToken: refreshToken,
+              },
+              { upsert: true, new: true }
+            );
+            if (!makeRefreshToken) {
+              return res.status(500).json({ message: "Something went wrong" });
+            }
             const token = jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
               expiresIn: "24h",
             });
             return res.status(201).json({
               message: "Registered successful",
               token: token,
+              refreshToken: refreshToken,
+              user_id: _id,
             });
           }
           return res.status(500).json({ message: "Something bad happened" });
@@ -330,5 +376,33 @@ exports.updateProfilePicture = async (req, res) => {
     });
   } catch (e) {
     return res.status(500).send({ message: e.name });
+  }
+};
+//=================================== refresh token ================================================//
+exports.refreshToken = async (req, res) => {
+  try {
+    const { error } = validator.refreshTokenSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const newRefreshToken = uuidv4();
+    const refresh = await RefreshToken.findOneAndUpdate(
+      { user_id: req.body.user_id, refreshToken: req.body.refreshToken },
+      {
+        refreshToken: newRefreshToken,
+      },
+      { new: true }
+    );
+    if (!refresh) {
+      return res.status(400).json({ message: "Wrong refresh token" });
+    }
+    const token = jwt.sign({ _id: req.body.user_id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    return res
+      .status(200)
+      .json({ refreshToken: newRefreshToken, token: token });
+  } catch (e) {
+    return res.status(500).json({ message: "Something went wrong" });
   }
 };
